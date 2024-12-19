@@ -24,6 +24,10 @@ Additionally, this project depends on other third-party Python packages. Please 
 pip install -r requirement.txt
 ```
 
+# System Requirements
+
+We have tested this on `Window 10` and  `Ubuntu 20.04.1 LTS`
+
 # Examples
 
 Converting an ONNX model into executable code for a CIM system primarily involves three main processes: retraining with awareness of hardware computation processes(post-deployment training), optimization of hardware tunable parameters, and generation of inference codes. Since direct access to real hardware platforms may not be feasible, this example focuses on generating code that can be run on a simulator.
