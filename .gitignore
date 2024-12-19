@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+*.egg-info
+*.npy
+*.tar
+scripts
+trained_model
+ir
+scripts
+sil_opt_log

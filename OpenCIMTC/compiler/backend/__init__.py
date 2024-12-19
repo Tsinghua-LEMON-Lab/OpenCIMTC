@@ -1,0 +1,2 @@
+from .to_inference_codes.gen_code import InferenceCodeGen
+from .to_training_codes.gen_code import TrainingCodeGen

@@ -1,0 +1,74 @@
+dataloader:
+  batch_size: 128
+  dataset: cifar10
+  deterministic: true
+  num_classes: 10
+  path: [your dataset path]
+  serialized: false
+  val_split: 0.01
+  workers: 8
+device:
+  gpu: 
+  - 0
+  type: cuda
+model:
+  name: resnet32_mapped_ir_PDT
+  checkpoint: resnet32/resnet32_float_weight.pth.tar
+  strict: false
+  pre_trained: false
+img_quant_bits: 4
+optimizer:
+  learning_rate: 0.01
+  momentum: 0.9
+  op_name: SGD
+  weight_decay: 0.0001
+lr_scheduler:
+  gamma: 0.1
+  milestones:
+  - 30
+  - 50
+  mode: multi_step
+  update_per_batch: false
+log:
+  num_best_scores: 3
+  print_freq: 20
+epochs: 60
+eval: false
+log:
+  num_best_scores: 3
+  print_freq: 20
+resume:
+  path: null
+output_dir: resnet32/trained_model/quantization_a4w4_wo_noise
+quantization:
+  input:
+    default:
+      all_positive: false
+      bit: 4
+      init_mode: percent
+      init_percent: 0.9998
+      per_channel: false
+      quant_name: lsq
+      symmetric: true
+  weight:
+    default:
+      all_positive: false
+      bit: 4
+      init_mode: percent
+      init_percent: 0.8
+      noise_range: max_min
+      noise_scale: 0
+      per_channel: false
+      quant_name: lsq
+      symmetric: true  
+  output:
+    default:
+      all_positive: false
+      bit: 4
+      init_mode: percent
+      init_percent: 0.9998
+      per_channel: false
+      quant_name: lsq
+      symmetric: false
+  init_scale: true
+  init_batch_num: 1
