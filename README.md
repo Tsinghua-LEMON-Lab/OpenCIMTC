@@ -74,7 +74,7 @@ python cimcc.py -i resnet32/ir/resnet32_mapped_ir_with_pdt_weight.yaml --to_opti
 After running this, a file named `resnet32_mapped_ir_with_pdt_weight_SIM_OPT.py` will be generated in the `resnet32/scripts/` directory. Then, execute the following command:
 
 ```
-python optimize.py -i resnet32/ir/resnet32_mapped_ir_with_pdt_weight.yaml -id [training_sample_input_data] -il [training_sample_input_target] -w resnet32/trained_model/quantization_a4w4_noise_0.06/[your_file_name]/resnet32_PDT_best.pth.tar -m resnet32/scripts/resnet32_mapped_ir_with_pdt_weight_SIM_OPT.py -n resnet32_mapped_ir_with_pdt_weight_SIM_OPT
+python optimize.py -i resnet32/ir/resnet32_mapped_ir_with_pdt_weight.yaml -id [training_sample_input_data] -il [training_sample_input_target] -w resnet32/inference_weight/resnet32_mapped_ir_pdt_weight.pth.tar -m resnet32/scripts/resnet32_mapped_ir_with_pdt_weight_SIM_OPT.py -n resnet32_mapped_ir_with_pdt_weight_SIM_OPT
 ```
 
 Note that `[training_sample_input_target]` here refers to the real-valued outputs of the model, used for calculating loss, not labels. The optimized IR file will be generated in the `resnet32/ir/` directory with the name `resnet32_mapped_ir_with_pdt_weight_sil_opt.yaml`.
@@ -90,7 +90,7 @@ python cimcc.py -i resnet32/ir/resnet32_mapped_ir_with_pdt_weight_sil_opt.yaml -
 After running this, a file named `resnet32_mapped_ir_with_pdt_weight_sil_opt_SIM.py` will be generated in the `resnet32/scripts/` directory, which is the simulator code. You can then use relevant test data to perform accuracy testing by running the following code:
 
 ```
-python inference.py -id [test_input_data] -il [test_input_label] -w resnet32/trained_model/quantization_a4w4_noise_0.06/[your_file_name]/resnet32_PDT_best.pth.tar -m resnet32/scripts/resnet32_mapped_ir_with_pdt_weight_sil_opt_SIM.py -n resnet32_mapped_ir_with_pdt_weight_sil_opt_SIM
+python inference.py -id [test_input_data] -il [test_input_label] -w resnet32/inference_weight/resnet32_mapped_ir_pdt_weight.pth.tar -m resnet32/scripts/resnet32_mapped_ir_with_pdt_weight_sil_opt_SIM.py -n resnet32_mapped_ir_with_pdt_weight_sil_opt_SIM
 ```
 
 # Discussion
