@@ -61,7 +61,7 @@ Similarly, after running, a folder for `quantization_a4w4_noise_0.06` will be cr
 python cimcc.py -i resnet32/ir/resnet32_mapped_ir.yaml --modify_ir -w resnet32/trained_model/quantization_a4w4_noise_0.06/[your_file_name]/resnet32_PDT_best.pth.tar
 ```
 
-Then, in the `resnet32\ir` directory, the files `resnet32_mapped_ir_with_pdt_weight.yaml` and `resnet32_mapped_ir_pdt_weight.pth.tar`
+Then, in the `resnet32\ir` directory, the files `resnet32_mapped_ir_with_pdt_weight.yaml` will be created. And the `resnet32\inference_weight\` directory will be created with the file `resnet32_mapped_ir_pdt_weight.pth.tar`.
 
 ## 2. Hardware Parameters Optimization
 
@@ -74,7 +74,7 @@ python cimcc.py -i resnet32/ir/resnet32_mapped_ir_with_pdt_weight.yaml --to_opti
 After running this, a file named `resnet32_mapped_ir_with_pdt_weight_SIM_OPT.py` will be generated in the `resnet32/scripts/` directory. Then, execute the following command:
 
 ```
-python optimize.py -ir resnet32/ir/resnet32_mapped_ir_with_pdt_weight.yaml -id [training_sample_input_data] -il [training_sample_input_target] -w resnet32/trained_model/quantization_a4w4_noise_0.06/[your_file_name]/resnet32_PDT_best.pth.tar -m resnet32/scripts/resnet32_mapped_ir_with_pdt_weight_SIM_OPT.py -n resnet32_mapped_ir_with_pdt_weight_SIM_OPT
+python optimize.py -i resnet32/ir/resnet32_mapped_ir_with_pdt_weight.yaml -id [training_sample_input_data] -il [training_sample_input_target] -w resnet32/trained_model/quantization_a4w4_noise_0.06/[your_file_name]/resnet32_PDT_best.pth.tar -m resnet32/scripts/resnet32_mapped_ir_with_pdt_weight_SIM_OPT.py -n resnet32_mapped_ir_with_pdt_weight_SIM_OPT
 ```
 
 Note that `[training_sample_input_target]` here refers to the real-valued outputs of the model, used for calculating loss, not labels. The optimized IR file will be generated in the `resnet32/ir/` directory with the name `resnet32_mapped_ir_with_pdt_weight_sil_opt.yaml`.
