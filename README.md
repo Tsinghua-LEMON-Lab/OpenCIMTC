@@ -26,7 +26,7 @@ pip install -r requirement.txt
 
 # System Requirements
 
-We have tested this on `Window 10` and  `Ubuntu 20.04.1 LTS`
+We have tested this on `Windows 10` and  `Ubuntu 20.04.1 LTS`
 
 # Examples
 
