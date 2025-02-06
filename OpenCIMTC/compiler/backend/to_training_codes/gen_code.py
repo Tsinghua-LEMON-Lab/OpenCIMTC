@@ -641,7 +641,9 @@ class TrainingCodeGen(PythonCode):
                 c_ += 1
             dim = layer_info.op.axis
             if isinstance(layer_info.op.split, int):
-                channel = layer_info.op.split
+                pre_layers = self.ir.layers[layer_info.inputs[0].ref]
+                pre_layers_out_shape = pre_layers.outputs[0].shape[dim]
+                channel = pre_layers_out_shape // layer_info.op.split
             elif isinstance(layer_info.op.split, list):
                 channel = layer_info.op.split[0]
             pre_layers = layer_info.inputs[0].ref
