@@ -52,7 +52,7 @@ def Macro_MVM_1bIN_4bOUT_SIM(input_data, weight_data, *, DAC_noise = 0, conducta
 
 def Macro_Conv2d_SIM(inputs, weights, *, kernel = 1, stride = 1, padding = 0, input_quant_scale = 1.0, output_dequant_scale = 1.0,
                     activation_bits = 4, input_expansion_method = 0, integration_time = 0, weight_row_copy = 1, PE_weight_noise=0.0, 
-                    ADC_offset = 0, device='cpu'):
+                    ADC_offset = 0, device='cpu', bias = None):
     # Input quantization, input quant scale is learned during training
     inputs_int = (inputs / input_quant_scale).round()
     thd_value = 2 ** (activation_bits - 1) - 1
@@ -98,19 +98,23 @@ def Macro_Conv2d_SIM(inputs, weights, *, kernel = 1, stride = 1, padding = 0, in
     else:
         raise ValueError(f'Not supported input expansion method: {input_expansion_method} !!!')
     
+    # rescale output
+    outputs = outputs * output_dequant_scale
+    
+    # add bias
+    if bias is not None:
+        outputs = outputs + bias
+    
     # reshape output shape
     out_h = (in_h + 2 * padding - kernel) // stride + 1
     out_w = (in_w + 2 * padding - kernel) // stride + 1
     outputs = outputs.reshape(batch_size, out_h, out_w, oc).permute(0, 3, 1, 2).contiguous()
     
-    # rescale output
-    outputs = outputs * output_dequant_scale
-       
     return outputs
 
 def Macro_FC_SIM(inputs, weights, *, input_quant_scale = 1, output_dequant_scale = 1.0, activation_bits = 4, 
                 input_expansion_method = 0, integration_time = 0, weight_row_copy = 1, PE_weight_noise=0.0,
-                ADC_offset = 0, device='cpu'):
+                ADC_offset = 0, device='cpu', bias = None):
     # input quantization, input quant scale is learned during training
     inputs_int = (inputs / input_quant_scale).round()
     thd_value = 2 ** (activation_bits - 1) - 1
@@ -148,6 +152,9 @@ def Macro_FC_SIM(inputs, weights, *, input_quant_scale = 1, output_dequant_scale
     
     # rescale output
     outputs = outputs * output_dequant_scale
+    
+    if bias is not None:
+        outputs = outputs + bias
     
     return outputs
 

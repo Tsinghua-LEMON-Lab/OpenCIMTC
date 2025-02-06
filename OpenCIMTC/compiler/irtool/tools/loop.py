@@ -70,9 +70,9 @@ class LoopLayer(LayerTree, BaseLayer):
                 if dd.loop is None:
                     inputs.append(('I', di.ref))
                 elif dd.loop.source == 'split':
-                    name = f'{ns_name}-split-{inp}{i}'
+                    name = f'{ns_name}_split_{inp}{i}'
                     op = make_op('split', axis=dd.loop.axis, split=self.repeat)
-                    layers[name] = make_layer(op=op, inputs=[di.ref])
+                    layers[name] = make_layer(op=op, inputs=[dict(ref=di.ref)])
                     inputs.append(('S', name))
                 elif dd.loop.source == 'output':
                     ol = self.layers[oup]
@@ -96,13 +96,13 @@ class LoopLayer(LayerTree, BaseLayer):
                         return (t[1],)
                     else:
                         name2, idx2 = t[2:]
-                        return (f'{ns_name}-{name2}-{ith-1}', idx2)
+                        return (f'{ns_name}_{name2}_{ith-1}', idx2)
                 else:
                     assert False
             elif self.repeat > 1:
-                return (f'{ns_name}-{name}-{ith}', idx)
+                return (f'{ns_name}_{name}_{ith}', idx)
             else:
-                return (f'{ns_name}-{name}', idx)
+                return (f'{ns_name}_{name}', idx)
 
         for i in range(self.repeat):
             for name, layer in from_layers.items():
@@ -111,14 +111,14 @@ class LoopLayer(LayerTree, BaseLayer):
                 if i == 0:
                     layer2 = layer.clone()
                 else:
-                    layer2 = make_layer('reuse', layer=f'{ns_name}-{name}-{0}')
+                    layer2 = make_layer('reuse', layer=f'{ns_name}_{name}_{0}')
                     layer2.inputs = [dd.clone() for dd in layer.inputs]
                 for d in layer2.inputs:
                     d.set_ref(*new_ref(d, i))
                 if self.repeat > 1:
-                    layers[f'{ns_name}-{name}-{i}'] = layer2
+                    layers[f'{ns_name}_{name}_{i}'] = layer2
                 else:
-                    layers[f'{ns_name}-{name}'] = layer2
+                    layers[f'{ns_name}_{name}'] = layer2
 
         outputs = [d.clone() for d in from_layers[oup].inputs]
         for d in outputs:

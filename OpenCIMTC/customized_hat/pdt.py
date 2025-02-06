@@ -98,7 +98,7 @@ class Conv2dPDT(nn.Conv2d):
         bit_length = input_bit - 1
         for bit_index in range(bit_length):
             input_bit_value = train_multi_bit(input_int, 1, bit_index, bit_length)
-            out_bit_value = self._conv_forward(input_bit_value * input_s, weight_int * weight_s, self.bias)
+            out_bit_value = self._conv_forward(input_bit_value * input_s, weight_int * weight_s)
             out_bit_int, out_bit_s = self.output_quantizer(out_bit_value)
             # 
             out_value_list.append(out_bit_value)
@@ -107,12 +107,11 @@ class Conv2dPDT(nn.Conv2d):
             out_s += out_bit_s
         # average scale
         out_s = out_s / bit_length
-        
-        # # not PDT
-        # out_value = self._conv_forward(input_int * input_s, weight_int * weight_s, self.bias)
-        # out_int, out_s = self.output_quantizer(out_value)
-        
-        return out_int * out_s
+        # 
+        out = out_int * out_s
+        if self.bias:
+            out += self.bias.view(1, -1, 1, 1)
+        return out
 
 class ConvTranspose2dPDT(nn.ConvTranspose2d):
     def __init__(self, in_channels, out_channels, kernel_size, stride,
@@ -186,7 +185,7 @@ class ConvTranspose2dPDT(nn.ConvTranspose2d):
         bit_length = input_bit - 1
         for bit_index in range(bit_length):
             input_bit_value = train_multi_bit(input_int, 1, bit_index, bit_length)
-            out_bit_value = self._conv_forward(input_bit_value * input_s, weight_int * weight_s, self.bias)
+            out_bit_value = self._conv_forward(input_bit_value * input_s, weight_int * weight_s)
             out_bit_int, out_bit_s = self.output_quantizer(out_bit_value)
             # 
             out_value_list.append(out_bit_value)
@@ -195,8 +194,10 @@ class ConvTranspose2dPDT(nn.ConvTranspose2d):
             out_s += out_bit_s
         # average scale
         out_s = out_s / bit_length
-        
-        return out_int * out_s
+        out = out_int * out_s
+        if self.bias:
+            out += self.bias.view(1, -1, 1, 1)
+        return out
 
             
 class LinearPDT(nn.Linear):
@@ -269,7 +270,7 @@ class LinearPDT(nn.Linear):
         bit_length = input_bit - 1
         for bit_index in range(bit_length):
             input_bit_value = train_multi_bit(input_int, 1, bit_index, bit_length)
-            out_bit_value = F.linear(input_bit_value * input_s, weight_int * weight_s, self.bias)
+            out_bit_value = F.linear(input_bit_value * input_s, weight_int * weight_s)
             out_bit_int, out_bit_s = self.output_quantizer(out_bit_value)
             # 
             out_value_list.append(out_bit_value)
@@ -278,6 +279,9 @@ class LinearPDT(nn.Linear):
             out_s += out_bit_s
         # average scale
         out_s = out_s / bit_length
-        
-        return out_int * out_s
+        # 
+        out = out_int * out_s
+        if self.bias:
+            out += self.bias.view(1, -1)
+        return out
 

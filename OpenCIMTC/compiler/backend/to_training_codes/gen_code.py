@@ -99,23 +99,35 @@ class TrainingCodeGen(PythonCode):
         init_str = []
 
         self.all_node = {}
+        self.reuse_layer = {}
         
         for name, layer in layers.items():
-            
             if layer.type == 'input':
                 c_ = 0
                 for in_ in layer.inputs:
                     self.all_node[f'graph_input:{c_}'] = f'x_graph_input_{c_}'
                     c_ += 1
             elif layer.type == 'op':
-                if len(layer.outputs) > 1:
-                    c_ = 0
-                    for in_ in layer.outputs:
-                        self.all_node[f'{name}:{c_}'] = f'x_{name}_{c_}'
-                        c_ += 1
+                if layer.op.op_id not in ['constant']:
+                    if layer.outputs != None and len(layer.outputs) > 1:
+                        c_ = 0
+                        for in_ in layer.outputs:
+                            self.all_node[f'{name}:{c_}'] = f'x_{name}_{c_}'
+                            c_ += 1
+                    elif layer.op.op_id in ['split']:
+                        c_ = 0
+                        for in_ in range(layer.op.split):
+                            self.all_node[f'{name}:{c_}'] = f'x_{name}_{c_}'
+                            c_ += 1
+                    else:
+                        self.all_node[f'{name}'] = f'x_{name}'
                 else:
                     self.all_node[f'{name}'] = f'x_{name}'
-            
+            elif layer.type == 'reuse':
+                
+                self.reuse_layer[name] = layer.layer
+                self.all_node[f'{name}'] = f'x_{name}'
+                
             if layer.type == 'op' and layer.op.op_id in ['conv2d', 'fused_conv2d', 'matmul', 'fused_fc', 
                                                          'fc', 'maxpool2d', 'batch_norm2d', 'silu', 'resize', 
                                                          'relu', 'avgpool2d', 'global_avg_pool2d', 'conv_transpose2d',
@@ -128,11 +140,12 @@ class TrainingCodeGen(PythonCode):
                     y = self.gen_layer(layer.op.op_id, name, layer, gen_code='init')
                     
                 init_str.append(y)
-                
+    
         # gen init function
         with self.indent():
             with self.indent():
                 for s in init_str:
+                    print(s)
                     if '\n' in s:
                         s = s.split('\n')
                         for s_ in s:
@@ -159,11 +172,14 @@ class TrainingCodeGen(PythonCode):
         for name, layer in layers.items():
             
             # inner function
-            if layer.type == 'op':
+            if layer.type in ['op', 'reuse']:
                 with self.indent():
                     with self.indent():
                         # 
-                        s_ = self.gen_layer(layer.op.op_id, name, layer, gen_code='forward', )
+                        if layer.type == 'reuse':
+                            s_ = self.gen_layer(layers[layer.layer].op.op_id, name, layer, gen_code='forward', )
+                        else:
+                            s_ = self.gen_layer(layer.op.op_id, name, layer, gen_code='forward', )
                         if '\n' in s_:
                             s_1 = s_.split('\n')
                             for s_2 in s_1:
@@ -184,12 +200,15 @@ class TrainingCodeGen(PythonCode):
                                 s_ += f'{self.all_node[in_.ref]}, '
                             c_ += 1
                         yield f'return {s_}'
+            
     
     
     def get_pre_layer(self, layers):
         prefix_layer = {}
         for name, layer in layers.items():
-            if layer.type not in ['input', 'output'] and layer.op.op_id not in ['constant']:
+            if layer.type not in ['input', 'output']: 
+                if layer.type == 'op' and layer.op.op_id in ['constant']:
+                    continue
                 prefix_layer[name] =  []
                 for i in layer.inputs:
                     if 'graph_input' not in i.ref:
@@ -241,10 +260,16 @@ class TrainingCodeGen(PythonCode):
     # matmul
     
     def fn_gen_matmul(self, layer_name, layer_info, gen_code='init'):
-        in_channel = layer_info.op.in_channel
-        out_channel = layer_info.op.out_channel
-        bias = layer_info.op.bias
-        
+        if layer_name in self.reuse_layer.keys():
+            layer_info_reuse = self.ir.layers[self.reuse_layer[layer_name]]
+            in_channel = layer_info_reuse.op.in_channel
+            out_channel = layer_info_reuse.op.out_channel
+            bias = layer_info_reuse.op.bias
+        else:
+            in_channel = layer_info.op.in_channel
+            out_channel = layer_info.op.out_channel
+            bias = layer_info.op.bias
+            
         #   
         if gen_code == 'init':
             train_layer_module = 'nn.Linear'
@@ -256,8 +281,13 @@ class TrainingCodeGen(PythonCode):
         
         elif gen_code == 'forward':
             if len(layer_info.inputs) == 1:
+                
                 pre_layers = layer_info.inputs[0].ref
-                s_ = f'x_{layer_name} = self.{layer_name}({self.all_node[pre_layers]})'
+                if layer_name in self.reuse_layer.keys():
+                    s_ = f'x_{layer_name} = self.{self.reuse_layer[layer_name]}({self.all_node[pre_layers]})'
+                else:
+                    s_ = f'x_{layer_name} = self.{layer_name}({self.all_node[pre_layers]})'
+
             elif len(layer_info.inputs) == 2:
                 pre_layers_1 = layer_info.inputs[0].ref
                 pre_layers_2 = layer_info.inputs[1].ref
@@ -387,7 +417,10 @@ class TrainingCodeGen(PythonCode):
     def fn_gen_relu(self, layer_name, layer_info, gen_code='forward'):
         if gen_code == 'forward':
             pre_layers = layer_info.inputs[0].ref
-            return  f'x_{layer_name} = self.{layer_name}({self.all_node[pre_layers]})'
+            if layer_name in self.reuse_layer.keys():
+                return  f'x_{layer_name} = self.{self.reuse_layer[layer_name]}({self.all_node[pre_layers]})'
+            else:
+                return  f'x_{layer_name} = self.{layer_name}({self.all_node[pre_layers]})'
         elif gen_code == 'init':
             return f'self.{layer_name} = nn.ReLU()'
         
@@ -560,7 +593,7 @@ class TrainingCodeGen(PythonCode):
     
     # tanh
     
-    def fn_tanh(self, layer_name, layer_info, gen_code='forward'):
+    def fn_gen_tanh(self, layer_name, layer_info, gen_code='forward'):
         if gen_code == 'forward':
             pre_layer = layer_info.inputs[0].ref
             return f'x_{layer_name} = torch.tanh({self.all_node[pre_layer]})' 
@@ -601,13 +634,16 @@ class TrainingCodeGen(PythonCode):
         if gen_code == 'forward':
             s_ = ''
             c_ = 0
-            for o in layer_info.outputs:
+            for o in range(layer_info.op.split):
                 s_ += f'x_{layer_name}_{c_}'
-                if c_ != len(layer_info.outputs) - 1:
+                if c_ != layer_info.op.split - 1:
                     s_ += ', '
                 c_ += 1
             dim = layer_info.op.axis
-            channel = layer_info.op.split[0]
+            if isinstance(layer_info.op.split, int):
+                channel = layer_info.op.split
+            elif isinstance(layer_info.op.split, list):
+                channel = layer_info.op.split[0]
             pre_layers = layer_info.inputs[0].ref
             return f'{s_} = torch.split({self.all_node[pre_layers]}, {channel}, dim={dim})'
         else:
