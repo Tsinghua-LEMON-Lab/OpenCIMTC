@@ -39,7 +39,7 @@ log:
   print_freq: 20
 resume:
   path: null
-output_dir: resnet32/trained_model/uantization_a4w4_noise_0.06
+output_dir: resnet32/trained_model/quantization_a4w4_noise_0.06
 quantization:
   input:
     default:
