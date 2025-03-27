@@ -8,7 +8,7 @@ This project is a software toolchain for memristor-based compute-in-memory (CIM)
 4. Automatically implementing weight placement;
 5. Automatically generating hardware inference functions.
 
-For further details, refer to the paper *A full-stack memristor-based computation-in-memory system with software-hardware co-development.*
+For further details, refer to the paper [*A full-stack memristor-based computation-in-memory system with software-hardware co-development.*](https://www.nature.com/articles/s41467-025-57183-0)
 
 # Install
 
@@ -95,6 +95,23 @@ After running this, a file named `resnet32_mapped_ir_with_pdt_weight_sil_opt_SIM
 
 ```
 python inference.py -id [test_input_data] -il [test_input_label] -w resnet32/inference_weight/resnet32_mapped_ir_pdt_weight.pth.tar -m resnet32/scripts/resnet32_mapped_ir_with_pdt_weight_sil_opt_SIM.py -n resnet32_mapped_ir_with_pdt_weight_sil_opt_SIM
+```
+
+# Citation
+
+If you are using this project in your research, please cite the following paper:
+
+```bibtex
+@article{yu2025full,
+  title={A full-stack memristor-based computation-in-memory system with software-hardware co-development},
+  author={Yu, Ruihua and Wang, Ze and Liu, Qi and Gao, Bin and Hao, Zhenqi and Guo, Tao and Ding, Sanchuan and Zhang, Junyang and Qin, Qi and Wu, Dong and others},
+  journal={Nature Communications},
+  volume={16},
+  number={1},
+  pages={2123},
+  year={2025},
+  publisher={Nature Publishing Group UK London}
+}
 ```
 
 # Discussion
