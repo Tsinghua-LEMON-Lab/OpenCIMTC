@@ -30,7 +30,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description='training, inferencing and optimizing with Open CIM Toolchain')
     p.add_argument('-i', '--ir', default=None, help='path of the ir')
     p.add_argument('-id', '--input_data', default=None, help='path of the input data')
-    p.add_argument('-il', '--input_label', default=None, help='path of the input label')
+    p.add_argument('-it', '--input_target', default=None, help='path of the target real-valued results corresponding to the input')
     p.add_argument('-w', '--pdt_trained_weights', default=None, help='the trained weights and parameters with PDT method')
     p.add_argument('-n', '--module_name', help='name of the generated module')
     p.add_argument('-m', '--module_path', help='path of the generated module')
@@ -52,8 +52,8 @@ if __name__ == "__main__":
     feature_map_in = torch.load(args.id).to(device)
     # torch params
     weights_torch = torch.load(args.pdt_trained_weights)
-    # label
-    test_label = torch.load(args.input_label).to(device)
+    # target real-valued results corresponding to the input
+    test_target = torch.load(args.input_target).to(device)
     #
     func = convert_module_to_object(args.module_path, args.module_name)
     # 
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     ir_path = str(Path(ir_path).parent)
     log_dir = ir_path + f'/sil_opt_log/'
     # 
-    optimizer = SimInLoopOptimizer(ir, func, feature_map_in, test_label,
+    optimizer = SimInLoopOptimizer(ir, func, feature_map_in, test_target,
                                 weights_torch, loss_thr=loss_thr, beta=beta, optimized_params_category=optimized_params_category,
                                 log_dir=log_dir, device=device)
     optimizer.run(size_pop=args.size_pop, max_iter=args.max_iter)

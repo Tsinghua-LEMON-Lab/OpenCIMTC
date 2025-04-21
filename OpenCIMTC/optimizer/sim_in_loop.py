@@ -11,7 +11,7 @@ from ..compiler.hw_paras_def.macro import * #noqa
 
 class SimInLoopOptimizer:
     
-    def __init__(self, ir, infer_module, test_input, test_label, weights=None, pe_weight_noise=0.1,
+    def __init__(self, ir, infer_module, test_input, test_target, weights=None, pe_weight_noise=0.1,
                  training_samples_num=256, optimized_params_category=None, beta = 0.1, loss_thr = 1,
                  log_dir=None, device='cuda', ):
         # 
@@ -21,7 +21,7 @@ class SimInLoopOptimizer:
         self.weights = weights
         self.training_samples_num = training_samples_num
         self.test_input = test_input
-        self.test_label = test_label
+        self.test_target = test_target
         self.loss_thr = loss_thr
         self.beta = beta
         self.log_dir = log_dir
@@ -232,7 +232,7 @@ class SimInLoopOptimizer:
         kwargs['PE_weight_noise'] = self.pe_weight_noise
         batch_size = self.training_samples_num
         output_sim = self.infer_module(self.test_input[0:batch_size,:,:,:], self.weights, **kwargs)[0]
-        loss = F.mse_loss(output_sim, self.test_label)
+        loss = F.mse_loss(output_sim, self.test_target)
         if self.device == 'cuda':
             loss = loss.cpu()
         self.logger.info(f'current loss: {loss} !!!')

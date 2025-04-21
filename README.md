@@ -78,10 +78,10 @@ python cimcc.py -i resnet32/ir/resnet32_mapped_ir_with_pdt_weight.yaml --to_opti
 After running this, a file named `resnet32_mapped_ir_with_pdt_weight_SIM_OPT.py` will be generated in the `resnet32/scripts/` directory. Then, execute the following command:
 
 ```
-python optimize.py -i resnet32/ir/resnet32_mapped_ir_with_pdt_weight.yaml -id [training_sample_input_data] -il [training_sample_input_target] -w resnet32/inference_weight/resnet32_mapped_ir_pdt_weight.pth.tar -m resnet32/scripts/resnet32_mapped_ir_with_pdt_weight_SIM_OPT.py -n resnet32_mapped_ir_with_pdt_weight_SIM_OPT
+python optimize.py -i resnet32/ir/resnet32_mapped_ir_with_pdt_weight.yaml -id [training_sample_input_data] -it [training_sample_input_target] -w resnet32/inference_weight/resnet32_mapped_ir_pdt_weight.pth.tar -m resnet32/scripts/resnet32_mapped_ir_with_pdt_weight_SIM_OPT.py -n resnet32_mapped_ir_with_pdt_weight_SIM_OPT
 ```
 
-Note that `[training_sample_input_target]` here refers to the real-valued outputs of the model, used for calculating loss, not labels. The optimized IR file will be generated in the `resnet32/ir/` directory with the name `resnet32_mapped_ir_with_pdt_weight_sil_opt.yaml`.
+Note that `[training_sample_input_target]` here refers to the real-valued outputs of the model, used for calculating loss, not labels. The `[training_sample_input_target]` can be directly inferred using inputs, the model structure, and the weights with PyTorch or ONNX Runtime, without the need to consider any non-ideal factors. The optimized IR file will be generated in the `resnet32/ir/` directory with the name `resnet32_mapped_ir_with_pdt_weight_sil_opt.yaml`.
 
 ## 3. Inference Code Generation
 
