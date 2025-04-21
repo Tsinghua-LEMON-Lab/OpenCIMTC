@@ -1,6 +1,6 @@
 # OpenCIMTC
 
-This project is a software toolchain for memristor-based compute-in-memory (CIM) systems, encompassing compilers, optimizers, simulators, and training modules. It assists developers in the entire process from ONNX model to chip deployment. The distinctive features of this project include:
+This project is a software toolchain for memristor-based compute-in-memory (CIM) systems, encompassing compiler, optimizer, simulator, and training modules. It assists developers in the entire process from ONNX model to chip deployment. The distinctive features of this project include:
 
 1. Providing a high-level intermediate representation (CIM-IR) tailored for CIM systems;
 2. Automatically generating hardware-aware training codes;
