@@ -227,6 +227,8 @@ def save_checkpoint(epoch, name, model, optimizer, extras=None, is_best=None, ou
     quantization_info = {}
     for n, module in model.named_modules():
         if isinstance(module, Conv2dPDT) or isinstance(module, ConvTranspose2dPDT) or isinstance(module, LinearPDT):
+            if 'module' in n:
+                n = n.split('.')[1]
             quantization_info[n] = module.get_params()
     
     filename = 'checkpoint.pth.tar' if name is None else name + '_checkpoint.pth.tar'

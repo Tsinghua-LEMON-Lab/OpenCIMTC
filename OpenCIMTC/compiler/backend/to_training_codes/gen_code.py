@@ -131,7 +131,7 @@ class TrainingCodeGen(PythonCode):
             if layer.type == 'op' and layer.op.op_id in ['conv2d', 'fused_conv2d', 'matmul', 'fused_fc', 
                                                          'fc', 'maxpool2d', 'batch_norm2d', 'silu', 'resize', 
                                                          'relu', 'avgpool2d', 'global_avg_pool2d', 'conv_transpose2d',
-                                                         'layer_norm', 'constant']:
+                                                         'layer_norm', 'constant', 'leaky_relu']:
                 if layer.op.op_id in ['conv2d', 'fused_conv2d','conv_transpose2d']:
                     y = self.gen_layer(layer.op.op_id, name, layer, gen_code='init')
                 else:
@@ -566,8 +566,8 @@ class TrainingCodeGen(PythonCode):
             return f'x_{layer_name} = self.{layer_name}({self.all_node[pre_layer]})' 
         elif gen_code == 'init':
             scale = layer_info.op.scale[-1]
-            # mode = layer_info.op.mode
-            return f"self.{layer_name} = nn.Upsample(scale_factor={scale}, mode=upsample_mode, )"
+            mode = layer_info.op.mode
+            return f"self.{layer_name} = nn.Upsample(scale_factor={scale}, mode=f'{mode}', )"
         else:
             raise ValueError(f'Not support {gen_code} !!!')
     
@@ -620,6 +620,7 @@ class TrainingCodeGen(PythonCode):
             raise ValueError(f'Not support: {gen_code} !!!')
     
     # unsqueeze
+    
     def fn_gen_unsqueeze(self, layer_name, layer_info, gen_code='forward'):
         if gen_code == 'forward':
             pre_layer = layer_info.inputs[0].ref
@@ -629,27 +630,45 @@ class TrainingCodeGen(PythonCode):
             raise ValueError(f'Not support: {gen_code} !!!')    
     
     # split
+    
     def fn_gen_split(self, layer_name, layer_info, gen_code='forward'):
         
         if gen_code == 'forward':
             s_ = ''
             c_ = 0
-            for o in range(layer_info.op.split):
+            for o in layer_info.outputs:
                 s_ += f'x_{layer_name}_{c_}'
-                if c_ != layer_info.op.split - 1:
+                if c_ != len(layer_info.outputs) - 1:
                     s_ += ', '
                 c_ += 1
             dim = layer_info.op.axis
-            if isinstance(layer_info.op.split, int):
-                pre_layers = self.ir.layers[layer_info.inputs[0].ref]
-                pre_layers_out_shape = pre_layers.outputs[0].shape[dim]
-                channel = pre_layers_out_shape // layer_info.op.split
-            elif isinstance(layer_info.op.split, list):
-                channel = layer_info.op.split[0]
+            channel = layer_info.op.split
             pre_layers = layer_info.inputs[0].ref
             return f'{s_} = torch.split({self.all_node[pre_layers]}, {channel}, dim={dim})'
         else:
             raise ValueError(f'Not support: {gen_code} !!!')
+    
+    # def fn_gen_split(self, layer_name, layer_info, gen_code='forward'):
+    
+        # if gen_code == 'forward':
+        #     s_ = ''
+        #     c_ = 0
+        #     for o in range(layer_info.op.split):
+        #         s_ += f'x_{layer_name}_{c_}'
+        #         if c_ != layer_info.op.split - 1:
+        #             s_ += ', '
+        #         c_ += 1
+        #     dim = layer_info.op.axis
+        #     if isinstance(layer_info.op.split, int):
+        #         pre_layers = self.ir.layers[layer_info.inputs[0].ref]
+        #         pre_layers_out_shape = pre_layers.outputs[0].shape[dim]
+        #         channel = pre_layers_out_shape // layer_info.op.split
+        #     elif isinstance(layer_info.op.split, list):
+        #         channel = layer_info.op.split[0]
+        #     pre_layers = layer_info.inputs[0].ref
+        #     return f'{s_} = torch.split({self.all_node[pre_layers]}, {channel}, dim={dim})'
+        # else:
+        #     raise ValueError(f'Not support: {gen_code} !!!')
     
     # flatten
     
@@ -742,3 +761,18 @@ class TrainingCodeGen(PythonCode):
             return s_
         else:
             raise ValueError(f'Not support: {gen_code} !!!')
+    
+    # leaky relu
+    def fn_gen_leaky_relu(self, layer_name, layer_info, gen_code='forward'):
+        alpha = layer_info.op.alpha
+        if gen_code == 'init':
+            s_ = ''
+            s_ += f'self.{layer_name} = nn.LeakyReLU({alpha})'
+            return s_
+        elif gen_code == 'forward':
+            pre_layers = layer_info.inputs[0].ref
+            s_ = ''
+            s_ += f'x_{layer_name} = self.{layer_name}({self.all_node[pre_layers]})'
+            return s_
+        else:
+            raise ValueError(f'暂不支持 {gen_code} !!!')

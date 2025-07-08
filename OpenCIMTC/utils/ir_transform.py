@@ -8,9 +8,9 @@ from ..compiler import *
 from ..simulator.torch_utils import current_range
 from .gen_weights import hardware_adaptive_split_weight
 
-def gen_ir(onnx_model, save_onnx_weight_to_torch=True):
+def gen_ir(onnx_model, save_onnx_weight_to_torch=True, device_num=8):
     # device define
-    devices = [{ 'name':'macro-0', 'kind':'rram-144k-cluster', 'num':8}]  
+    devices = [{'name':'macro-0', 'kind':'rram-144k-cluster', 'num': device_num}]  
     # # 
     # parse file path
     model_path = os.path.dirname(onnx_model)
@@ -21,7 +21,7 @@ def gen_ir(onnx_model, save_onnx_weight_to_torch=True):
     onnx_ir = onnx_obj.ir
     
     # placement
-    map = mapper.MacroPlacement(ir=onnx_ir, device = devices, weight_format = 'HWC', place_strategy = 'LLA')
+    map = mapper.MacroPlacement(ir=onnx_ir, device = devices, weight_format = 'HWC', place_strategy = 'LLA', adaptive_split_ir=True)
     map.run()
     mapped_ir = map.ir
     
@@ -46,7 +46,7 @@ def hardware_paras_identification(software_scale):
     hardware_w_scale = 19.16 / 7
     # get w_int
     total_scale = software_scale
-        
+     
     diff = []
     for it_time, adc_range_value in current_range.items():
         hardware_out_scale = 7 / adc_range_value 
@@ -56,11 +56,12 @@ def hardware_paras_identification(software_scale):
             w_int = 1
         hard_scale = w_int * (hardware_in_scale * hardware_w_scale * hardware_out_scale)
         diff.append(abs(hard_scale / total_scale - 1))
-        
+    
     # get index with the minimal diff        
     min_diff_index = np.argmin(np.array(diff))
     adc_range = int(min_diff_index) + 1
     scale_diff = diff[min_diff_index] + 1
+    
     return adc_range, scale_diff
 
 def modify_ir_with_pdt_weight(mapped_ir, pdt_weight, save_quant_weight=True):
@@ -79,6 +80,9 @@ def modify_ir_with_pdt_weight(mapped_ir, pdt_weight, save_quant_weight=True):
                     if len(w.shape) == 4:
                         w = w.reshape(w.shape[0], -1)
                     quantized_weight[f'{k}.weight'] = w
+                    if 'bias' in trained_paras['quantization_info'][k].keys():
+                        if trained_paras['quantization_info'][k]['bias'] is not None:
+                            quantized_weight[f'{k}.bias'] = trained_paras['quantization_info'][k]['bias']
                     # 
                     software_scale = trained_paras['quantization_info'][k]['soft_total_scale'].detach().numpy()
                     adc_range, scale_diff = hardware_paras_identification(software_scale)
@@ -86,6 +90,10 @@ def modify_ir_with_pdt_weight(mapped_ir, pdt_weight, save_quant_weight=True):
                     v.macro_calc_info.input_quant_scale = float(trained_paras['quantization_info'][k]['input_scale'].detach().numpy())
                     v.macro_calc_info.assigned_output_quant_scale = float(trained_paras['quantization_info'][k]['output_scale'].detach().numpy())
                     v.macro_calc_info.activation_bits = trained_paras['quantization_info'][k]['input_bit']
+                elif f'{k}.weight' in trained_paras['state_dict'].keys():
+                    quantized_weight[f'{k}.weight'] = trained_paras['state_dict'][f'{k}.weight']
+                    if f'{k}.bias' in trained_paras['state_dict'].keys():
+                        quantized_weight[f'{k}.bias'] = trained_paras['state_dict'][f'{k}.bias']
                     
             elif v.op.op_id in ['batch_norm2d'] and f'{k}.weight' in trained_paras['state_dict'].keys():
                 # 

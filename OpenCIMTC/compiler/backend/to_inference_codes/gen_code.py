@@ -564,3 +564,10 @@ class InferenceCodeGen(PythonCode):
         # attr
         pre_layers = layer_info.inputs[0].ref
         return f"x_{layer_name} = Macro_Tanh({self.all_node[pre_layers]})"
+
+    # leaky relu
+    def fn_gen_leaky_relu(self, layer_name, layer_info):
+        # attr
+        pre_layers = layer_info.inputs[0].ref
+        alpha = layer_info.op.alpha
+        return f"x_{layer_name} = Macro_leaky_relu({self.all_node[pre_layers]}, alpha={alpha})"

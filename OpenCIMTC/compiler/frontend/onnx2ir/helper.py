@@ -604,6 +604,9 @@ def get_resize_mode(node):
     for i in node.attribute:
         if i.name == "mode":
             mode = i.s
+            mode = str(mode)
+            if "b'" in mode:
+                mode = mode[2:-1]
     return mode
 
 def get_pad_value(node):

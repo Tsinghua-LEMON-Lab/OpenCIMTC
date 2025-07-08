@@ -218,3 +218,6 @@ def Macro_Flatten(inputs, start_dim=0):
 
 def Macro_Softmax(inputs, dim=1):
     return F.softmax(inputs, dim=dim)
+
+def Macro_leaky_relu(inputs, alpha=0.01):
+    return F.leaky_relu(inputs, negative_slope=alpha)
